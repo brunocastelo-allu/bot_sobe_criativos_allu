@@ -1,0 +1,9 @@
+backend/uploads/
+backend/.env
+backend/settings.json
+backend/data.db
+backend/context/
+backend/__pycache__/
+backend/**/__pycache__/
+frontend/node_modules/
+frontend/.vite/
