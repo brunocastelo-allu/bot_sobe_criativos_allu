@@ -395,3 +395,92 @@
   transition: color 0.15s;
 }
 .ctx-file-remove:hover { color: #E53E3E; }
+
+/* ── Bulk Bar ── */
+.bulk-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #E5E5EA;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  z-index: 100;
+  max-width: 90vw;
+}
+.bulk-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border-right: 1px solid #E5E5EA;
+  padding-right: 14px;
+}
+.bulk-count { font-size: 13px; font-weight: 600; color: #2E2F39; white-space: nowrap; }
+.bulk-divider { width: 1px; height: 20px; background: #E5E5EA; flex-shrink: 0; }
+.bulk-tag {
+  font-size: 11px;
+  background: #F2F2F7;
+  color: #6B6B7A;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.bulk-tag-mixed { background: #FFF8E1; color: #B8860B; }
+.bulk-bar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bulk-input-group { display: flex; align-items: center; gap: 4px; }
+.bulk-input {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #E5E5EA;
+  background: #F9F9FB;
+  color: #2E2F39;
+  outline: none;
+  width: 170px;
+}
+.bulk-input::placeholder { color: #C7C7CC; }
+.bulk-input:focus { border-color: #27AE60; }
+.bulk-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #E5E5EA;
+  cursor: pointer;
+  white-space: nowrap;
+  background: #F2F2F7;
+  color: #2E2F39;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s;
+}
+.bulk-btn:hover { background: #E8E8EE; }
+.bulk-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.bulk-btn-ai { color: #27AE60; border-color: #D4EDDA; background: #F0FAF4; }
+.bulk-btn-ai:hover { background: #D4EDDA; }
+.bulk-btn-approve { background: #27AE60; color: #fff; border-color: #27AE60; }
+.bulk-btn-approve:hover { background: #219d55; }
+.bulk-btn-publish { background: #27AE60; color: #fff; border-color: #27AE60; }
+.bulk-btn-publish:hover { background: #219d55; }
+.bulk-btn-delete { color: #E53E3E; border-color: #FECACA; background: #FFF5F5; }
+.bulk-btn-delete:hover { background: #FECACA; }
+.bulk-btn-clear {
+  font-size: 15px;
+  background: none;
+  border: none;
+  color: #C7C7CC;
+  cursor: pointer;
+  padding: 4px 6px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  margin-left: 2px;
+  transition: color 0.15s;
+}
+.bulk-btn-clear:hover { color: #6B6B7A; }

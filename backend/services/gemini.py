@@ -46,11 +46,28 @@ def _generate(client, contents):
 
 
 def _upload_and_wait(client, path: str):
-    f = client.files.upload(file=path)
-    while f.state.name == "PROCESSING":
-        time.sleep(2)
-        f = client.files.get(name=f.name)
-    return f
+    import unicodedata, shutil, tempfile
+    try:
+        os.path.basename(path).encode("ascii")
+        safe_path = path
+    except UnicodeEncodeError:
+        ext = os.path.splitext(path)[1]
+        normalized = unicodedata.normalize("NFKD", os.path.splitext(os.path.basename(path))[0])
+        safe_name = "".join(c for c in normalized if ord(c) < 128) or "arquivo"
+        tmp = tempfile.NamedTemporaryFile(suffix=ext, prefix=safe_name + "_", delete=False)
+        tmp.close()
+        shutil.copy2(path, tmp.name)
+        safe_path = tmp.name
+
+    try:
+        f = client.files.upload(file=safe_path)
+        while f.state.name == "PROCESSING":
+            time.sleep(2)
+            f = client.files.get(name=f.name)
+        return f
+    finally:
+        if safe_path != path and os.path.exists(safe_path):
+            os.remove(safe_path)
 
 
 def _build_contents(client, media_path: str, context_path: str = None):

@@ -496,23 +496,37 @@ function KanbanCard({ card, colKey, platform, campanhas, metaPages, onAction, on
 }
 
 /* ── Bulk Action Bar ── */
-function BulkBar({ count, onGenerateAI, onApplyCopy, onApplyUrl, onPublish, onDelete, onClear }) {
-  const [bulkCopy, setBulkCopy] = useState("");
+function BulkBar({ selectedCards, aiGenerating, onGenerateAI, onApplyUrl, onDelete, onClear }) {
   const [bulkUrl, setBulkUrl] = useState("");
+  const count = selectedCards.length;
+
   return (
     <div className="bulk-bar">
       <span className="bulk-count">{count} selecionado{count !== 1 ? "s" : ""}</span>
-      <button className="bulk-btn bulk-btn-ai" onClick={onGenerateAI}><IcoRobot /> Gerar IA</button>
-      <div className="bulk-input-group">
-        <input className="bulk-input" placeholder="Copy para todos (max 120)" maxLength={120} value={bulkCopy} onChange={(e) => setBulkCopy(e.target.value)} />
-        <button className="bulk-btn" disabled={!bulkCopy.trim()} onClick={() => { onApplyCopy(bulkCopy.trim()); setBulkCopy(""); }}>Aplicar copy</button>
-      </div>
+
+      <div className="bulk-divider" />
+
+      <button className="bulk-btn bulk-btn-ai" onClick={onGenerateAI} disabled={aiGenerating}>
+        {aiGenerating ? <span className="ai-btn-spinner" /> : <IcoRobot />}
+        {aiGenerating ? "Gerando..." : "Gerar copy com IA"}
+      </button>
+
+      <div className="bulk-divider" />
+
       <div className="bulk-input-group">
         <input className="bulk-input" placeholder="URL para todos" type="url" value={bulkUrl} onChange={(e) => setBulkUrl(e.target.value)} />
-        <button className="bulk-btn bulk-btn-approve" disabled={!bulkUrl.trim()} onClick={() => { onApplyUrl(bulkUrl.trim()); setBulkUrl(""); }}>Aprovar</button>
       </div>
-      <button className="bulk-btn bulk-btn-publish" onClick={onPublish}>Marcar Subidos</button>
+
+      <div className="bulk-divider" />
+
+      <button className="bulk-btn bulk-btn-approve" disabled={!bulkUrl.trim()} onClick={() => { onApplyUrl(bulkUrl.trim()); setBulkUrl(""); }}>
+        Preparar para Upload →
+      </button>
+
+      <div className="bulk-divider" />
+
       <button className="bulk-btn bulk-btn-delete" onClick={onDelete}><IcoTrash /> Excluir</button>
+
       <button className="bulk-btn-clear" onClick={onClear} title="Limpar selecao">✕</button>
     </div>
   );
@@ -528,6 +542,7 @@ export default function Kanban({ platform = "tiktok" }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [campanhas, setCampanhas] = useState([]);
   const [metaPages, setMetaPages] = useState([]);
+  const [bulkAiGenerating, setBulkAiGenerating] = useState(false);
   const dragData = useRef(null);
 
   const carregar = (silent = false) => {
@@ -598,13 +613,9 @@ export default function Kanban({ platform = "tiktok" }) {
 
   const handleBulkGenerateAI = async () => {
     const targets = selectedCards.filter((c) => !c.copy_aprovada && !c.id.startsWith("mock"));
+    setBulkAiGenerating(true);
     await Promise.all(targets.map((c) => api.generateCopy(c.id, platform === "meta" ? "meta" : "tiktok").catch(console.error)));
-  };
-
-  const handleBulkApplyCopy = async (copy) => {
-    const targets = selectedCards.filter((c) => !c.id.startsWith("mock"));
-    await Promise.all(targets.map((c) => api.updateCopy(c.id, copy).catch(console.error)));
-    carregar(true);
+    setBulkAiGenerating(false);
   };
 
   const handleBulkApproveWithUrl = async (url) => {
@@ -615,13 +626,6 @@ export default function Kanban({ platform = "tiktok" }) {
     carregar(true);
   };
 
-  const handleBulkPublish = async () => {
-    const targets = selectedCards.filter((c) => c.copy_aprovada && c.status !== "OK" && !c.id.startsWith("mock"));
-    if (!targets.length) { alert("Nenhum card em 'Aguardando Upload' selecionado."); return; }
-    await Promise.all(targets.map((c) => api.publicar(c.id, { platform }).catch(console.error)));
-    setSelectedIds(new Set());
-    carregar(true);
-  };
 
   const handleBulkDelete = async () => {
     if (!window.confirm(`Excluir ${selectedIds.size} card(s) permanentemente?`)) return;
@@ -710,11 +714,10 @@ export default function Kanban({ platform = "tiktok" }) {
 
       {selectedIds.size > 0 && (
         <BulkBar
-          count={selectedIds.size}
+          selectedCards={selectedCards}
+          aiGenerating={bulkAiGenerating}
           onGenerateAI={handleBulkGenerateAI}
-          onApplyCopy={handleBulkApplyCopy}
           onApplyUrl={handleBulkApproveWithUrl}
-          onPublish={handleBulkPublish}
           onDelete={handleBulkDelete}
           onClear={() => setSelectedIds(new Set())}
         />

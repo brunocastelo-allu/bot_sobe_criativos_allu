@@ -26,6 +26,16 @@ def clean_filename(filename: str) -> str:
     return f"{prefix}_{name}"
 
 
+def safe_filename(filename: str) -> str:
+    import unicodedata
+    ext = os.path.splitext(filename)[1]
+    name = os.path.splitext(filename)[0]
+    normalized = unicodedata.normalize("NFKD", name)
+    ascii_name = "".join(c for c in normalized if ord(c) < 128)
+    ascii_name = re.sub(r"[^\w\-]", "_", ascii_name).strip("_") or "arquivo"
+    return ascii_name + ext
+
+
 # ── List ────────────────────────────────────────────────────────────────────
 
 @router.get("/")
@@ -41,12 +51,13 @@ async def upload(
     file: UploadFile = File(...),
     platform: str = Query(default="tiktok", pattern="^(tiktok|meta)$"),
 ):
-    dest = os.path.join(UPLOAD_DIR, file.filename)
+    stored_name = safe_filename(file.filename)
+    dest = os.path.join(UPLOAD_DIR, stored_name)
     contents = await file.read()
     with open(dest, "wb") as f:
         f.write(contents)
     nome_criativo = clean_filename(file.filename)
-    card = adicionar_criativo(file.filename, nome_criativo, platform=platform)
+    card = adicionar_criativo(stored_name, nome_criativo, platform=platform)
     background_tasks.add_task(_gerar_copy_task, dest, card["id"], platform)
     return {"message": f"{file.filename} adicionado.", "card": card}
 
