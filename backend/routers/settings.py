@@ -14,7 +14,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 META_APP_ID = os.environ.get("META_APP_ID", "")
 META_APP_SECRET = os.environ.get("META_APP_SECRET", "")
 META_REDIRECT_URI = os.environ.get("META_REDIRECT_URI", "http://localhost:8000/settings/meta/callback")
-_META_SCOPES = "ads_management,ads_read,pages_manage_ads,pages_read_engagement"
+_META_SCOPES = "ads_management,ads_read"
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 public_router = APIRouter(prefix="/settings", tags=["Settings Public"])
