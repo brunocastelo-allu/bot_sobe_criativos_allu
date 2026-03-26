@@ -532,7 +532,6 @@ function BulkBar({ selectedCards, aiGenerating, onGenerateAI, onApplyUrl, onDele
 /* ── Main Kanban ── */
 export default function Kanban({ platform = "tiktok" }) {
   const [criativos, setCriativos] = useState([]);
-  const [apiConnected, setApiConnected] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [dragOverCol, setDragOverCol] = useState(null);
@@ -546,7 +545,7 @@ export default function Kanban({ platform = "tiktok" }) {
     if (!silent) setRefreshing(true);
     api.listarCriativos(platform)
       .then((d) => {
-        if (Array.isArray(d)) { setCriativos(d.map((c) => ({ ...c, id: String(c.id) }))); setApiConnected(true); }
+        if (Array.isArray(d)) { setCriativos(d.map((c) => ({ ...c, id: String(c.id) }))); }
       })
       .catch(() => {})
       .finally(() => setRefreshing(false));
@@ -651,8 +650,7 @@ export default function Kanban({ platform = "tiktok" }) {
       <div className="toolbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <h1>Criativos — {platformLabel}</h1>
-          {refreshing && <span className="toolbar-meta">Atualizando...</span>}
-          {!apiConnected && <span className="toolbar-badge">Demo — conecte o backend para dados reais</span>}
+          {refreshing && <span className="toolbar-meta">Carregando...</span>}
         </div>
         <div className="toolbar-right">
           <button className="btn-secondary" onClick={() => carregar(true)} disabled={refreshing}>Atualizar</button>

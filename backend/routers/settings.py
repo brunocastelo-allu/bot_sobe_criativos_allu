@@ -17,6 +17,7 @@ META_REDIRECT_URI = os.environ.get("META_REDIRECT_URI", "http://localhost:8000/s
 _META_SCOPES = "ads_management,ads_read,pages_manage_ads,pages_read_engagement"
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
+public_router = APIRouter(prefix="/settings", tags=["Settings Public"])
 
 
 def _load() -> dict:
@@ -87,7 +88,7 @@ def delete_context_file():
 
 # ── Meta OAuth ─────────────────────────────────────────────────────────────────
 
-@router.get("/meta/login")
+@public_router.get("/meta/login")
 def meta_oauth_login():
     if not META_APP_ID:
         raise HTTPException(status_code=400, detail="META_APP_ID não configurado no .env")
@@ -100,7 +101,7 @@ def meta_oauth_login():
     return RedirectResponse(f"https://www.facebook.com/v21.0/dialog/oauth?{params}")
 
 
-@router.get("/meta/callback")
+@public_router.get("/meta/callback")
 def meta_oauth_callback(code: str = None, error: str = None, error_description: str = None):
     if error or not code:
         return HTMLResponse(_oauth_html(False, error_description or error or "Acesso negado"))

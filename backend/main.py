@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from routers import creatives, tiktok, meta, insights, settings, auth
+from routers.settings import public_router as settings_public_router
 from services.database import init_db
 from services.auth import get_current_user
 
@@ -26,6 +27,7 @@ app.add_middleware(
 
 # Rotas públicas
 app.include_router(auth.router)
+app.include_router(settings_public_router)
 
 # Rotas protegidas
 _auth = [Depends(get_current_user)]
