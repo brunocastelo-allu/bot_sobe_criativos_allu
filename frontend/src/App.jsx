@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate, NavLink } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, NavLink, useNavigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./AuthContext";
 import Kanban from "./pages/Kanban";
 import Insights from "./pages/Insights";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
 import "./App.css";
 
 const AlluLogo = () => (
@@ -37,6 +39,13 @@ const IcoChevron = () => (
     <polyline points="6 9 12 15 18 9"/>
   </svg>
 );
+const IcoLogout = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <polyline points="16 17 21 12 16 7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+);
 
 function SidebarSection({ icon, label, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -65,40 +74,83 @@ function ComingSoon({ platform, page }) {
   );
 }
 
+function ProtectedRoute({ children }) {
+  const { token } = useAuth();
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+}
+
+function AppLayout() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
+  const initials = user?.nome
+    ? user.nome.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
+    : user?.email?.[0]?.toUpperCase() || "?";
+
+  return (
+    <div className="app">
+      <aside className="sidebar">
+        <div className="sidebar-logo"><AlluLogo /></div>
+        <nav className="sidebar-nav">
+          <SidebarSection icon={<IcoTikTok />} label="TikTok Ads" defaultOpen>
+            <NavLink to="/tiktok/criativos" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>Criativos</NavLink>
+            <NavLink to="/tiktok/insights" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>Insights</NavLink>
+          </SidebarSection>
+          <SidebarSection icon={<IcoMeta />} label="Meta Ads" defaultOpen={false}>
+            <NavLink to="/meta/criativos" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>Criativos</NavLink>
+            <NavLink to="/meta/insights" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>Insights</NavLink>
+          </SidebarSection>
+        </nav>
+        <div className="sidebar-bottom">
+          <NavLink to="/settings" className={({ isActive }) => "sidebar-settings" + (isActive ? " active" : "")}>
+            <IcoSettings /> Configuracoes
+          </NavLink>
+          <div className="sidebar-user">
+            <div className="sidebar-user-avatar">{initials}</div>
+            <div className="sidebar-user-info">
+              <span className="sidebar-user-name">{user?.nome || user?.email?.split("@")[0] || ""}</span>
+              <span className="sidebar-user-email">{user?.email || ""}</span>
+            </div>
+            <button className="sidebar-logout" onClick={handleLogout} title="Sair">
+              <IcoLogout />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <main className="content">
+        <Routes>
+          <Route path="/" element={<Navigate to="/tiktok/criativos" replace />} />
+          <Route path="/tiktok/criativos" element={<Kanban key="tiktok" />} />
+          <Route path="/tiktok/insights" element={<Insights platform="tiktok" />} />
+          <Route path="/meta/criativos" element={<Kanban key="meta" platform="meta" />} />
+          <Route path="/meta/insights" element={<ComingSoon platform="Meta Ads" page="Insights" />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="app">
-        <aside className="sidebar">
-          <div className="sidebar-logo"><AlluLogo /></div>
-          <nav className="sidebar-nav">
-            <SidebarSection icon={<IcoTikTok />} label="TikTok Ads" defaultOpen>
-              <NavLink to="/tiktok/criativos" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>Criativos</NavLink>
-              <NavLink to="/tiktok/insights" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>Insights</NavLink>
-            </SidebarSection>
-            <SidebarSection icon={<IcoMeta />} label="Meta Ads" defaultOpen={false}>
-              <NavLink to="/meta/criativos" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>Criativos</NavLink>
-              <NavLink to="/meta/insights" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>Insights</NavLink>
-            </SidebarSection>
-          </nav>
-          <div className="sidebar-bottom">
-            <NavLink to="/settings" className={({ isActive }) => "sidebar-settings" + (isActive ? " active" : "")}>
-              <IcoSettings /> Configuracoes
-            </NavLink>
-          </div>
-        </aside>
-
-        <main className="content">
-          <Routes>
-            <Route path="/" element={<Navigate to="/tiktok/criativos" replace />} />
-            <Route path="/tiktok/criativos" element={<Kanban key="tiktok" />} />
-            <Route path="/tiktok/insights" element={<Insights platform="tiktok" />} />
-            <Route path="/meta/criativos" element={<Kanban key="meta" platform="meta" />} />
-            <Route path="/meta/insights" element={<ComingSoon platform="Meta Ads" page="Insights" />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </main>
-      </div>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/*" element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

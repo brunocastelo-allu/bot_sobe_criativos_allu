@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "bot-allu-tiktok",
+  "private_key_id": "f04e87480304f0df70a16d18f061fbf27d68cd34",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDCJYAz5rebfN4o\ntEuSnW4dU1ukT57zhV6vQkudRQvCTjFM/hCSN2BhOp5UMz4ygZbwUs+iSQq78n19\nZR0TT4E+a9n0plWxhZWc2ZrWjJCp8OZUIGePNQJb9K/fyG5vvCOIGkGcdyF/5uov\nakc8ZNwmNVf/OvvqUsrT7+sXnEMiOg+twWlvVwvc5Wn8wjfRx71NJZOhsO2Q7hrp\nK+XUD7VEm98cR+rbaw2n6YMBKjpnOHLolmeijTyaAjia86olrIDjedeDZMFNqvqA\n9cQ5aZoaths9i1zA4bMUj/zXmjG1Ngtn5a8FQq4BmuKh0MdUd7d+jL9s6ZKti/WM\npBPtr8P1AgMBAAECggEAJ3hfys10VQ5rDQvwlE9gyGH+ztYoGtqpwAhCnqffpuJm\nOACsBknvVH0KHNSpJ7P8Z4HyeAwQ/FplhFWG9nrSrAnZrxkU8WkW3GNKDSXZME+L\nSB2paC4u+1pw2hZhy2IMuDocTi7TFvFveXHKJz9bGYJ9UCSh/AbWeQV8/lkUtfOM\nnXUjQ3CDY96EWlHhOQg2faD/FyfTEU8lI+6hU9K4UEcgKn8XX+NqFYKTUnott4HB\njntNywgbbIFu4J5cCk5ku7mfoNqncHXXLatKOuKtbpwBI4h0W3IHdynrNx/OuCdO\nQCoiXw7Uadr+aKMePQD84ZGxqx6lELUxlqPqaCCIwQKBgQDrbCTXgi4QqEQBT/51\nE/4eQ6jzaV6HxyImE1I1xOMuGCN4RD5UpSmG0bc1QsZ0c3/rd3R3ykiBVPxprh/H\nOFB6Hw7x/FL42YTAAL4wTgtFlHoC6AlxOsO+xSfpyIo4KHMNXp67Sky+Gksy3Au8\nRVEgiUhAE7gtn6v9NlctAwqutQKBgQDTHcIyLrjOAeJBi1U/MhmAkSamQoQ0gwrl\noYVpNZEoYKusw/HIiIYhUTNDRqY1+/RXJy5pNkTnwczHdt/VmWa1Y8KsQuN9xuv+\nXIcuvHIA+imY1Jhvl4lYyja9kiraZnQkBIiXLu00epi1Wz9xPtg868sw+VupXLRE\ncjpDgwzIQQKBgCtqWCj+MuyTe2caj3yb4UNHiwLIrcwwZxXKfmC4HIVFolTtkOkf\nRFc+maDS3bJgEnkkIHBu94wSVjJPEEE3G3BKBgGOXObThm26NVjHK8D7Lr0WeZdO\nFQc7aK7ucr8EhqMyjedQPnLYeoG4ntlrlxh++LoIaPDQ/3DE8rK0WuX5AoGBALRU\newi6eAkf+s/Z4Fs2xCnZ0pW5w4vHU4uKSJbxtqgyyvGr/d85HrleztbshhUevjuj\nsDUWsgz0saK/m7qsadsO976E9CT/wZ1oE+CL/yVuihGNpxfK7Pr234NWU1xyn0oU\nxUe+QcfN4Jso8iwdbj+7ebi/hthH44ODvtjkHAsBAoGBAMrBvLvg/+YpYV9P0dXU\nMh5kZ3akjo+7Vw20fegkcFVbX+tz7y75tBHjZw4ICfxH2cs4cjCZiHuAWU6Ya+9s\n/o650ieEh2QmfN4p3OrN74PYBPbuIaP8r0iikcAmQkDPi+CubnLvjiy1xhHM+hkA\nmFYoEDFV1rlVprsaoxIvtdin\n-----END PRIVATE KEY-----\n",
+  "client_email": "allu-ads-storage@bot-allu-tiktok.iam.gserviceaccount.com",
+  "client_id": "102938385768333318966",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/allu-ads-storage%40bot-allu-tiktok.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

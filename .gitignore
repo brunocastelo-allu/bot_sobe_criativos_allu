@@ -1,5 +1,7 @@
+backend/env-cloudrun.yaml
 backend/uploads/
 backend/.env
+backend/gcs-key.json
 backend/settings.json
 backend/data.db
 backend/context/

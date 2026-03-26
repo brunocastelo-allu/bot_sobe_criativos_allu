@@ -1,5 +1,6 @@
 import os
 import re
+import tempfile
 from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, File, Query
 from pydantic import BaseModel
 from typing import Optional
@@ -10,11 +11,9 @@ from services.database import (
     aprovar_criativo, marcar_subido, rejeitar_criativo, deletar_criativo,
 )
 from services.gemini import gerar_copy, gerar_copy_meta
+from services.storage import upload_file, download_to_temp, delete_file
 
 router = APIRouter(prefix="/creatives", tags=["Criativos"])
-
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 def clean_filename(filename: str) -> str:
@@ -36,14 +35,14 @@ def safe_filename(filename: str) -> str:
     return ascii_name + ext
 
 
-# ── List ────────────────────────────────────────────────────────────────────
+# ── List ─────────────────────────────────────────────────────────────────────
 
 @router.get("/")
 def listar(platform: str = Query(default=None)):
     return listar_criativos(platform)
 
 
-# ── Upload ──────────────────────────────────────────────────────────────────
+# ── Upload ───────────────────────────────────────────────────────────────────
 
 @router.post("/upload")
 async def upload(
@@ -51,30 +50,40 @@ async def upload(
     file: UploadFile = File(...),
     platform: str = Query(default="tiktok", pattern="^(tiktok|meta)$"),
 ):
-    stored_name = safe_filename(file.filename)
-    dest = os.path.join(UPLOAD_DIR, stored_name)
+    blob_name = safe_filename(file.filename)
     contents = await file.read()
-    with open(dest, "wb") as f:
-        f.write(contents)
+    with tempfile.NamedTemporaryFile(suffix=os.path.splitext(blob_name)[1], delete=False) as tmp:
+        tmp.write(contents)
+        tmp_path = tmp.name
+    try:
+        upload_file(tmp_path, blob_name)
+    finally:
+        os.remove(tmp_path)
     nome_criativo = clean_filename(file.filename)
-    card = adicionar_criativo(stored_name, nome_criativo, platform=platform)
-    background_tasks.add_task(_gerar_copy_task, dest, card["id"], platform)
+    card = adicionar_criativo(blob_name, nome_criativo, platform=platform)
+    background_tasks.add_task(_gerar_copy_task, blob_name, card["id"], platform)
     return {"message": f"{file.filename} adicionado.", "card": card}
 
 
-def _gerar_copy_task(file_path: str, card_id: int, platform: str = "tiktok"):
+def _gerar_copy_task(blob_name: str, card_id: int, platform: str = "tiktok"):
+    temp_media = None
+    temp_ctx = None
     try:
+        temp_media = download_to_temp(blob_name)
         from routers.settings import _load as _load_settings
         settings = _load_settings()
         exemplos = settings.get("reference_copies", [])
-        context_path = settings.get("context_file")
+        ctx_blob = settings.get("context_file")
+        context_path = None
+        if ctx_blob:
+            temp_ctx = download_to_temp(ctx_blob)
+            context_path = temp_ctx
         historico = [c["copy"] for c in listar_criativos() if c.get("status") == "OK" and c.get("copy")]
-
         if platform == "meta":
-            result = gerar_copy_meta(file_path, historico=historico, exemplos=exemplos, context_path=context_path)
+            result = gerar_copy_meta(temp_media, historico=historico, exemplos=exemplos, context_path=context_path)
             atualizar_meta_copy(card_id, result["primary_text"], result["headline"], result["description"])
         else:
-            copy = gerar_copy(file_path, historico=historico, exemplos=exemplos, context_path=context_path)
+            copy = gerar_copy(temp_media, historico=historico, exemplos=exemplos, context_path=context_path)
             atualizar_copy(card_id, copy)
     except Exception as e:
         import traceback; traceback.print_exc()
@@ -82,6 +91,10 @@ def _gerar_copy_task(file_path: str, card_id: int, platform: str = "tiktok"):
         atualizar_copy(card_id, msg)
         if platform == "meta":
             atualizar_meta_copy(card_id, msg, "", "")
+    finally:
+        for tmp in [temp_media, temp_ctx]:
+            if tmp and os.path.exists(tmp):
+                os.remove(tmp)
 
 
 # ── Update copy (manual) ─────────────────────────────────────────────────────
@@ -109,12 +122,9 @@ def generate_copy(
     card = get_criativo(card_id)
     if not card:
         raise HTTPException(status_code=404, detail="Card nao encontrado.")
-    file_path = os.path.join(UPLOAD_DIR, card["arquivo"])
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Arquivo nao encontrado no servidor.")
     if platform == "tiktok":
         atualizar_copy(card_id, "Gerando copy...")
-    background_tasks.add_task(_gerar_copy_task, file_path, card_id, platform)
+    background_tasks.add_task(_gerar_copy_task, card["arquivo"], card_id, platform)
     return {"message": f"Gerando copy ({platform}) em background."}
 
 
@@ -167,7 +177,6 @@ def subido(card_id: int, payload: PublicarPayload = PublicarPayload()):
     from routers.settings import _load as _load_settings
     settings = _load_settings()
 
-    # Apply UTMs to URL if requested
     final_url = card.get("url") or ""
     if payload.use_utm:
         utm_key = "utm_meta" if payload.platform == "meta" else "utm_tiktok"
@@ -178,20 +187,17 @@ def subido(card_id: int, payload: PublicarPayload = PublicarPayload()):
             final_url = f"{base_url}{separator}{utm_pattern.lstrip('?&')}"
             atualizar_url(card_id, final_url)
 
-    # Publish to Meta Ads if applicable
     meta_result = None
     if payload.platform == "meta" and payload.adset_ids and payload.page_id:
         from services.meta_publisher import publish_creative
         token = settings.get("meta_api_key", "")
         ad_account_id = settings.get("meta_ad_account_id", "")
         if not token or not ad_account_id:
-            raise HTTPException(status_code=400, detail="Token ou conta Meta nao configurados nas Configuracoes.")
+            raise HTTPException(status_code=400, detail="Token ou conta Meta nao configurados.")
 
-        file_path = os.path.join(UPLOAD_DIR, card["arquivo"])
-        if not os.path.exists(file_path):
-            raise HTTPException(status_code=404, detail="Arquivo de midia nao encontrado no servidor.")
-
+        temp_file = None
         try:
+            temp_file = download_to_temp(card["arquivo"])
             meta_result = publish_creative(
                 token=token,
                 ad_account_id=ad_account_id,
@@ -201,17 +207,17 @@ def subido(card_id: int, payload: PublicarPayload = PublicarPayload()):
                 primary_text=card.get("meta_primary_text") or "",
                 headline=card.get("meta_headline") or "",
                 description=card.get("meta_description") or "",
-                file_path=file_path,
+                file_path=temp_file,
                 ad_name=card.get("nome_criativo") or f"Ad_{card_id}",
             )
         except RuntimeError as e:
             raise HTTPException(status_code=502, detail=str(e))
+        finally:
+            if temp_file and os.path.exists(temp_file):
+                os.remove(temp_file)
 
         if not meta_result["ads"] and meta_result["errors"]:
-            raise HTTPException(
-                status_code=502,
-                detail=meta_result["errors"][0]["error"],
-            )
+            raise HTTPException(status_code=502, detail=meta_result["errors"][0]["error"])
 
     marcar_subido(card_id)
     response = {"message": f"Card {card_id} publicado."}
@@ -224,7 +230,9 @@ def subido(card_id: int, payload: PublicarPayload = PublicarPayload()):
 
 @router.delete("/{card_id}")
 def deletar(card_id: int):
-    if not get_criativo(card_id):
+    card = get_criativo(card_id)
+    if not card:
         raise HTTPException(status_code=404, detail="Card nao encontrado.")
+    delete_file(card["arquivo"])
     deletar_criativo(card_id)
     return {"message": f"Card {card_id} deletado."}

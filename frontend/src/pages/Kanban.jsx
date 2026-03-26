@@ -8,11 +8,6 @@ function formatBytes(b) {
   return `${(b / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const MOCK_CARDS = [
-  { id: "mock-1", arquivo: "allu-ads-vert-stories-v1.mp4", nome_criativo: "VD_campanha_verao", copy: "Descubra a allu: conta digital com cashback real e zero anuidade.", meta_primary_text: "", meta_headline: "", meta_description: "", url: "", status: "AGUARDANDO APROVAÇÃO", copy_aprovada: false },
-  { id: "mock-2", arquivo: "allu-ads-produto-IMG-v2.png", nome_criativo: "IMG_produto_principal", copy: "allu: zero anuidade, cashback e rendimento automatico.", meta_primary_text: "Abra sua conta allu e tenha zero anuidade e cashback real.", meta_headline: "allu: sem anuidade", meta_description: "Abra gratis hoje", url: "https://allu.com.br/abrir-conta", status: "AGUARDANDO UPLOAD", copy_aprovada: true },
-  { id: "mock-3", arquivo: "video_tiktok_setembro.mp4", nome_criativo: "VD_tiktok_setembro", copy: "Abra sua conta allu hoje.", meta_primary_text: "", meta_headline: "", meta_description: "", url: "https://allu.com.br", status: "OK", copy_aprovada: true },
-];
 
 const COLUMNS = [
   { key: "fila",      label: "Fila",              badge: "badge-fila",
@@ -79,7 +74,9 @@ function UploadModal({ onClose, onDone, onCardCreated, platform = "tiktok" }) {
       const form = new FormData();
       form.append("file", entry.file);
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", `http://localhost:8000/creatives/upload?platform=${platform}`);
+      xhr.open("POST", `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/creatives/upload?platform=${platform}`);
+      const token = localStorage.getItem("token");
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable)
           setFiles((p) => p.map((f) => f.id === entry.id ? { ...f, progress: Math.round((e.loaded / e.total) * 100) } : f));
@@ -534,7 +531,7 @@ function BulkBar({ selectedCards, aiGenerating, onGenerateAI, onApplyUrl, onDele
 
 /* ── Main Kanban ── */
 export default function Kanban({ platform = "tiktok" }) {
-  const [criativos, setCriativos] = useState(MOCK_CARDS);
+  const [criativos, setCriativos] = useState([]);
   const [apiConnected, setApiConnected] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -583,14 +580,6 @@ export default function Kanban({ platform = "tiktok" }) {
   };
 
   const handleAction = async (type, card, data = {}) => {
-    const isMock = card.id?.startsWith("mock");
-    if (isMock) {
-      if (type === "aprovar") setCriativos((p) => p.map((c) => c.id === card.id ? { ...c, copy: data.copy, url: data.url, copy_aprovada: true, status: "AGUARDANDO UPLOAD", ...(data.metaCopy || {}) } : c));
-      else if (type === "rejeitar") setCriativos((p) => p.map((c) => c.id === card.id ? { ...c, status: "REJEITADO" } : c));
-      else if (type === "publicar") setCriativos((p) => p.map((c) => c.id === card.id ? { ...c, status: "OK" } : c));
-      else if (type === "deletar") setCriativos((p) => p.filter((c) => c.id !== card.id));
-      return;
-    }
     if (type === "deletar") {
       if (!window.confirm("Excluir este card permanentemente?")) return;
       await api.deletar(card.id).catch(console.error);

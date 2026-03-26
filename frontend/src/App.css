@@ -25,6 +25,61 @@
 .utm-check-label { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #6B6B7A; cursor: pointer; margin: 10px 0 8px; }
 .utm-check-label input[type="checkbox"] { accent-color: #27AE60; width: 13px; height: 13px; cursor: pointer; }
 
+/* ── Login ── */
+.login-page {
+  min-height: 100vh; background: #F2F2F7;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.login-card {
+  background: #fff; border: 1px solid #E5E5EA; border-radius: 20px;
+  padding: 40px 36px 32px; width: 100%; max-width: 380px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+}
+.login-logo { display: flex; justify-content: center; margin-bottom: 6px; }
+.login-subtitle { text-align: center; font-size: 13px; color: #9CA3AF; margin: 0 0 28px; }
+.login-tabs {
+  display: flex; background: #F2F2F7; border-radius: 10px;
+  padding: 3px; margin-bottom: 24px; gap: 3px;
+}
+.login-tab {
+  flex: 1; background: none; border: none; cursor: pointer;
+  padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  color: #9CA3AF; transition: all 0.15s;
+}
+.login-tab.active { background: #fff; color: #2E2F39; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.login-form { display: flex; flex-direction: column; gap: 10px; }
+.login-input {
+  width: 100%; background: #F9F9FB; border: 1px solid #E5E5EA;
+  border-radius: 10px; padding: 11px 14px;
+  font-size: 14px; color: #2E2F39; transition: border 0.15s; box-sizing: border-box;
+}
+.login-input:focus { outline: none; border-color: #27AE60; }
+.login-btn { margin-top: 6px; padding: 12px; font-size: 14px; border-radius: 10px; }
+.login-error { font-size: 12px; color: #E53E3E; text-align: center; margin: 0; }
+.login-success { font-size: 12px; color: #27AE60; text-align: center; margin: 0 0 12px; font-weight: 600; }
+.login-domain-hint { text-align: center; font-size: 11px; color: #C7C7CC; margin: 16px 0 0; }
+
+/* ── Sidebar user info ── */
+.sidebar-user {
+  display: flex; align-items: center; gap: 9px;
+  padding: 10px 14px; border-top: 1px solid #E5E5EA; margin-top: 6px;
+}
+.sidebar-user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: #27AE60; color: #fff;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sidebar-user-info { flex: 1; min-width: 0; }
+.sidebar-user-name { display: block; font-size: 12px; font-weight: 600; color: #2E2F39; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-user-email { display: block; font-size: 10px; color: #9CA3AF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-logout {
+  background: none; border: none; cursor: pointer; color: #C7C7CC;
+  padding: 4px; border-radius: 6px; display: flex; align-items: center;
+  transition: color 0.15s, background 0.15s; flex-shrink: 0;
+}
+.sidebar-logout:hover { color: #E53E3E; background: #FFF0F0; }
+
 /* ── Sidebar ── */
 .sidebar {
   width: 220px;
@@ -381,6 +436,28 @@
 .ref-copy-remove:hover { color: #E53E3E; }
 .ref-copy-empty { font-size: 12px; color: #C7C7CC; text-align: center; padding: 16px 0; }
 
+/* ── Meta OAuth button ── */
+.btn-meta-login {
+  display: inline-flex; align-items: center; gap: 9px;
+  background: #1877F2; color: #fff;
+  border: none; border-radius: 8px;
+  padding: 10px 18px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.btn-meta-login:hover { background: #166fe5; }
+.meta-oauth-connected {
+  display: flex; align-items: center; gap: 10px;
+  background: #EBF5FB; border: 1px solid #BEE0FB;
+  border-radius: 8px; padding: 10px 14px;
+}
+.meta-oauth-badge {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; font-weight: 600; color: #1877F2; flex: 1;
+}
+.meta-oauth-disconnect {
+  font-size: 12px; padding: 4px 10px; flex-shrink: 0;
+}
+
 /* ── Context file ── */
 .ctx-file-row {
   display: flex; align-items: center; gap: 10px;
@@ -395,6 +472,74 @@
   transition: color 0.15s;
 }
 .ctx-file-remove:hover { color: #E53E3E; }
+
+/* ── Settings v2 ── */
+.settings-page { max-width: 860px; }
+
+.stabs {
+  display: flex;
+  border-bottom: 2px solid #E5E5EA;
+  margin-bottom: 28px;
+  gap: 0;
+}
+.stab {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9CA3AF;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  border-radius: 0;
+}
+.stab:hover { color: #2E2F39; }
+.stab.active { color: #27AE60; border-bottom-color: #27AE60; font-weight: 600; }
+
+.stab-content { display: flex; flex-direction: column; gap: 20px; }
+
+.settings-card {
+  background: #fff;
+  border: 1px solid #E5E5EA;
+  border-radius: 14px;
+  padding: 24px;
+}
+.settings-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 20px;
+}
+
+.ai-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.ctx-upload-zone {
+  border: 2px dashed #D1D1D6;
+  border-radius: 10px;
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ctx-upload-zone:hover { border-color: #27AE60; background: #F7FDF9; }
+.ctx-upload-icon {
+  width: 40px; height: 40px;
+  background: #EAF7F0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 10px;
+}
+.ctx-upload-label { font-size: 13px; font-weight: 600; color: #2E2F39; margin: 0 0 4px; }
+.ctx-upload-hint { font-size: 11px; color: #9CA3AF; margin: 0; }
 
 /* ── Bulk Bar ── */
 .bulk-bar {
