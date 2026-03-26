@@ -43,7 +43,15 @@ export default function Login() {
     setError("");
     if (form.password !== form.confirm) { setError("As senhas não conferem."); return; }
     setLoading(true);
-    const res = await api.register(form.email, form.password, form.nome).catch(() => null);
+    let res = null;
+    try {
+      const r = await api.register(form.email, form.password, form.nome);
+      res = r;
+    } catch (err) {
+      setLoading(false);
+      setError("Erro de conexão com o servidor.");
+      return;
+    }
     setLoading(false);
     if (res?.message) {
       setSuccess("Conta criada! Faça login para continuar.");

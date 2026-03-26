@@ -44,6 +44,9 @@ def login(payload: LoginPayload):
     user = get_usuario_por_email(email)
     if not user or not verify_password(payload.password, user["senha_hash"]):
         raise HTTPException(status_code=401, detail="Email ou senha incorretos.")
+    # Migrate old bcrypt hash to pbkdf2_hmac transparently
+    if ":" not in user["senha_hash"]:
+        atualizar_senha_hash(email, hash_password(payload.password))
     return {
         "access_token": create_token(email),
         "token_type": "bearer",

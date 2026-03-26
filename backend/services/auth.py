@@ -24,10 +24,18 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
+    # New format: "salt:hexkey" (pbkdf2_hmac)
+    if ":" in hashed:
+        try:
+            salt, key_hex = hashed.split(":", 1)
+            key = hashlib.pbkdf2_hmac("sha256", plain.encode(), salt.encode(), 260000)
+            return hmac.compare_digest(key.hex(), key_hex)
+        except Exception:
+            return False
+    # Legacy bcrypt format
     try:
-        salt, key_hex = hashed.split(":", 1)
-        key = hashlib.pbkdf2_hmac("sha256", plain.encode(), salt.encode(), 260000)
-        return hmac.compare_digest(key.hex(), key_hex)
+        import bcrypt as _bcrypt
+        return _bcrypt.checkpw(plain.encode(), hashed.encode())
     except Exception:
         return False
 

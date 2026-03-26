@@ -4,6 +4,7 @@ python-multipart
 python-dotenv
 python-jose[cryptography]
 psycopg2-binary
+bcrypt
 google-cloud-storage
 google-auth
 google-auth-oauthlib
