@@ -52,10 +52,11 @@ export default function Settings() {
   }, []);
 
   /* ── Meta OAuth ── */
-  const handleMetaLogin = () => {
-    const base = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  const handleMetaLogin = async () => {
+    const res = await api.getMetaLoginUrl().catch(() => null);
+    if (!res?.url) { alert("Erro ao obter URL de login do Meta."); return; }
     const popup = window.open(
-      `${base}/settings/meta/login`,
+      res.url,
       "meta-oauth",
       "width=620,height=720,scrollbars=yes,resizable=yes"
     );

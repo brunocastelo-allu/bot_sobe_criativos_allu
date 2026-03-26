@@ -1,7 +1,9 @@
 import os
 import re
 import tempfile
-from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, File, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, File, Query, Depends
+from services.auth import get_current_user
+from services.database import get_user_meta
 from pydantic import BaseModel
 from typing import Optional
 
@@ -169,7 +171,7 @@ class PublicarPayload(BaseModel):
 
 
 @router.post("/subido/{card_id}")
-def subido(card_id: int, payload: PublicarPayload = PublicarPayload()):
+def subido(card_id: int, payload: PublicarPayload = PublicarPayload(), email: str = Depends(get_current_user)):
     card = get_criativo(card_id)
     if not card:
         raise HTTPException(status_code=404, detail="Card nao encontrado.")
@@ -190,8 +192,9 @@ def subido(card_id: int, payload: PublicarPayload = PublicarPayload()):
     meta_result = None
     if payload.platform == "meta" and payload.adset_ids and payload.page_id:
         from services.meta_publisher import publish_creative
-        token = settings.get("meta_api_key", "")
-        ad_account_id = settings.get("meta_ad_account_id", "")
+        user_meta = get_user_meta(email)
+        token = user_meta["meta_api_key"]
+        ad_account_id = user_meta["meta_ad_account_id"]
         if not token or not ad_account_id:
             raise HTTPException(status_code=400, detail="Token ou conta Meta nao configurados.")
 

@@ -103,6 +103,9 @@ export const api = {
   deleteMetaToken: () =>
     _fetch(`/settings/meta/token`, { method: "DELETE" }).then((r) => r?.json()),
 
+  getMetaLoginUrl: () =>
+    _fetch(`/settings/meta/login-url`).then((r) => r?.json()),
+
   changePassword: (old_password, new_password) =>
     _fetch(`/auth/change-password`, {
       method: "POST",

@@ -1,20 +1,53 @@
 import os
 import json
+import hmac as _hmac
+import hashlib
+import base64
+import time
 import tempfile
 import urllib.parse
 import urllib.request
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
-from services.database import get_settings_db, save_settings_db
+from services.database import (
+    get_settings_db, save_settings_db,
+    get_user_meta, save_user_meta_token, save_user_meta_account, clear_user_meta,
+)
+from services.auth import get_current_user
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
-META_APP_ID = os.environ.get("META_APP_ID", "")
-META_APP_SECRET = os.environ.get("META_APP_SECRET", "")
+META_APP_ID     = os.environ.get("META_APP_ID", "")
+META_APP_SECRET  = os.environ.get("META_APP_SECRET", "")
 META_REDIRECT_URI = os.environ.get("META_REDIRECT_URI", "http://localhost:8000/settings/meta/callback")
-_META_SCOPES = "ads_management,ads_read"
+_META_SCOPES     = "ads_management,ads_read"
+_SECRET_KEY      = os.environ.get("SECRET_KEY", "")
+
+
+def _make_oauth_state(email: str) -> str:
+    payload = json.dumps({"e": email, "t": int(time.time())})
+    sig = _hmac.new(_SECRET_KEY.encode(), payload.encode(), hashlib.sha256).hexdigest()[:24]
+    return base64.urlsafe_b64encode((payload + "|" + sig).encode()).decode()
+
+
+def _parse_oauth_state(state: str) -> str:
+    try:
+        decoded = base64.urlsafe_b64decode(state + "==").decode()
+        idx = decoded.rfind("|")
+        payload, sig = decoded[:idx], decoded[idx + 1:]
+        expected = _hmac.new(_SECRET_KEY.encode(), payload.encode(), hashlib.sha256).hexdigest()[:24]
+        if not _hmac.compare_digest(sig, expected):
+            raise ValueError("assinatura inválida")
+        data = json.loads(payload)
+        if time.time() - data["t"] > 600:
+            raise ValueError("expirado")
+        return data["e"]
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(400, "OAuth state inválido")
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 public_router = APIRouter(prefix="/settings", tags=["Settings Public"])
@@ -39,15 +72,22 @@ class SettingsPayload(BaseModel):
 
 
 @router.get("/")
-def get_settings():
-    return _load()
+def get_settings(email: str = Depends(get_current_user)):
+    data = _load()
+    user_meta = get_user_meta(email)
+    data["meta_api_key"] = user_meta["meta_api_key"]
+    data["meta_ad_account_id"] = user_meta["meta_ad_account_id"]
+    return data
 
 
 @router.post("/")
-def save_settings(data: SettingsPayload):
+def save_settings(data: SettingsPayload, email: str = Depends(get_current_user)):
     settings = _load()
-    settings.update(data.model_dump())
+    settings.update({k: v for k, v in data.model_dump().items()
+                     if k not in ("meta_api_key", "meta_ad_account_id")})
     _save(settings)
+    if data.meta_ad_account_id:
+        save_user_meta_account(email, data.meta_ad_account_id)
     return {"message": "Configuracoes salvas."}
 
 
@@ -88,24 +128,27 @@ def delete_context_file():
 
 # ── Meta OAuth ─────────────────────────────────────────────────────────────────
 
-@public_router.get("/meta/login")
-def meta_oauth_login():
+@router.get("/meta/login-url")
+def meta_login_url(email: str = Depends(get_current_user)):
     if not META_APP_ID:
-        raise HTTPException(status_code=400, detail="META_APP_ID não configurado no .env")
+        raise HTTPException(status_code=400, detail="META_APP_ID não configurado.")
+    state = _make_oauth_state(email)
     params = urllib.parse.urlencode({
         "client_id": META_APP_ID,
         "redirect_uri": META_REDIRECT_URI,
         "scope": _META_SCOPES,
         "response_type": "code",
+        "state": state,
     })
-    return RedirectResponse(f"https://www.facebook.com/v21.0/dialog/oauth?{params}")
+    return {"url": f"https://www.facebook.com/v21.0/dialog/oauth?{params}"}
 
 
 @public_router.get("/meta/callback")
-def meta_oauth_callback(code: str = None, error: str = None, error_description: str = None):
+def meta_oauth_callback(code: str = None, state: str = None, error: str = None, error_description: str = None):
     if error or not code:
         return HTMLResponse(_oauth_html(False, error_description or error or "Acesso negado"))
     try:
+        email = _parse_oauth_state(state or "")
         token_url = "https://graph.facebook.com/v21.0/oauth/access_token"
         p1 = urllib.parse.urlencode({
             "client_id": META_APP_ID, "client_secret": META_APP_SECRET,
@@ -120,19 +163,15 @@ def meta_oauth_callback(code: str = None, error: str = None, error_description: 
         })
         with urllib.request.urlopen(f"{token_url}?{p2}") as r:
             long_token = json.loads(r.read()).get("access_token", short_token)
-        settings = _load()
-        settings["meta_api_key"] = long_token
-        _save(settings)
+        save_user_meta_token(email, long_token)
         return HTMLResponse(_oauth_html(True))
     except Exception as e:
         return HTMLResponse(_oauth_html(False, str(e)))
 
 
 @router.delete("/meta/token")
-def meta_disconnect():
-    settings = _load()
-    settings["meta_api_key"] = ""
-    _save(settings)
+def meta_disconnect(email: str = Depends(get_current_user)):
+    clear_user_meta(email)
     return {"message": "Meta desconectado."}
 
 

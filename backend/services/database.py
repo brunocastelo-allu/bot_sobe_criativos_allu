@@ -48,13 +48,17 @@ def init_db():
         with conn.cursor() as cur:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS users (
-                    id         SERIAL PRIMARY KEY,
-                    email      TEXT NOT NULL UNIQUE,
-                    senha_hash TEXT NOT NULL,
-                    nome       TEXT DEFAULT '',
-                    created_at TIMESTAMP DEFAULT NOW()
+                    id                SERIAL PRIMARY KEY,
+                    email             TEXT NOT NULL UNIQUE,
+                    senha_hash        TEXT NOT NULL,
+                    nome              TEXT DEFAULT '',
+                    meta_api_key      TEXT DEFAULT '',
+                    meta_ad_account_id TEXT DEFAULT '',
+                    created_at        TIMESTAMP DEFAULT NOW()
                 )
             """)
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS meta_api_key TEXT DEFAULT ''")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS meta_ad_account_id TEXT DEFAULT ''")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS creatives (
                     id                SERIAL PRIMARY KEY,
@@ -103,6 +107,34 @@ def get_usuario_por_email(email: str):
             cur.execute("SELECT * FROM users WHERE email = %s", (email,))
             row = cur.fetchone()
             return dict(row) if row else None
+
+
+def get_user_meta(email: str) -> dict:
+    with get_db() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT meta_api_key, meta_ad_account_id FROM users WHERE email = %s", (email,))
+            row = cur.fetchone()
+            if not row:
+                return {"meta_api_key": "", "meta_ad_account_id": ""}
+            return {"meta_api_key": row["meta_api_key"] or "", "meta_ad_account_id": row["meta_ad_account_id"] or ""}
+
+
+def save_user_meta_token(email: str, token: str):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE users SET meta_api_key = %s WHERE email = %s", (token, email))
+
+
+def save_user_meta_account(email: str, account_id: str):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE users SET meta_ad_account_id = %s WHERE email = %s", (account_id, email))
+
+
+def clear_user_meta(email: str):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE users SET meta_api_key = '', meta_ad_account_id = '' WHERE email = %s", (email,))
 
 
 def atualizar_senha_hash(email: str, nova_hash: str):

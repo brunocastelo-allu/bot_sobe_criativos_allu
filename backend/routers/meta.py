@@ -1,7 +1,9 @@
 import json
 import urllib.request
 import urllib.error
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from services.auth import get_current_user
+from services.database import get_user_meta
 
 router = APIRouter(prefix="/meta", tags=["Meta"])
 
@@ -47,22 +49,20 @@ def _graph_get(path, token, extra=""):
 
 
 @router.get("/status")
-def status_api():
-    settings = _load_settings()
-    token = settings.get("meta_api_key", "")
+def status_api(email: str = Depends(get_current_user)):
+    meta = get_user_meta(email)
+    token = meta["meta_api_key"]
     if not token:
         return {"configurado": False, "mensagem": "Token nao configurado."}
     d, err = _graph_get("me", token)
     if err:
         return {"configurado": False, "mensagem": err.get("message", "Token invalido.")}
-    account_id = settings.get("meta_ad_account_id", "")
-    return {"configurado": bool(account_id), "mensagem": f"Conectado como {d.get('name')}"}
+    return {"configurado": bool(meta["meta_ad_account_id"]), "mensagem": f"Conectado como {d.get('name')}"}
 
 
 @router.get("/ad-accounts")
-def listar_ad_accounts():
-    settings = _load_settings()
-    token = settings.get("meta_api_key", "")
+def listar_ad_accounts(email: str = Depends(get_current_user)):
+    token = get_user_meta(email)["meta_api_key"]
     if not token:
         return []
     d, err = _graph_get("me/adaccounts", token, "&fields=id,name,account_status")
@@ -76,10 +76,10 @@ def listar_ad_accounts():
 
 
 @router.get("/campanhas")
-def listar_campanhas():
-    settings = _load_settings()
-    token = settings.get("meta_api_key", "")
-    ad_account_id = settings.get("meta_ad_account_id", "")
+def listar_campanhas(email: str = Depends(get_current_user)):
+    meta = get_user_meta(email)
+    token = meta["meta_api_key"]
+    ad_account_id = meta["meta_ad_account_id"]
 
     if not token or not ad_account_id:
         return _MOCK_CAMPAIGNS
@@ -113,9 +113,8 @@ def listar_campanhas():
 
 
 @router.get("/pages")
-def listar_pages():
-    settings = _load_settings()
-    token = settings.get("meta_api_key", "")
+def listar_pages(email: str = Depends(get_current_user)):
+    token = get_user_meta(email)["meta_api_key"]
     if not token:
         return _MOCK_PAGES
     d, err = _graph_get("me/accounts", token, "&fields=id,name")
