@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import tempfile
 from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, File, Query, Depends
 from services.auth import get_current_user
@@ -53,9 +54,8 @@ async def upload(
     platform: str = Query(default="tiktok", pattern="^(tiktok|meta)$"),
 ):
     blob_name = safe_filename(file.filename)
-    contents = await file.read()
     with tempfile.NamedTemporaryFile(suffix=os.path.splitext(blob_name)[1], delete=False) as tmp:
-        tmp.write(contents)
+        shutil.copyfileobj(file.file, tmp)
         tmp_path = tmp.name
     try:
         upload_file(tmp_path, blob_name)
